@@ -1,0 +1,89 @@
+---
+title: "200-тесты для готовых API"
+layout: post
+date: 2025-03-23
+categories: [API, Testing, Automation]
+---
+
+## ЧАСТЬ 1. 200-тесты для готовых API
+
+Начнем с самого простого — написание тестов для проверки 200-го ответа по уже готовой ручке. Предположим, что имеем следующую структуру:
+
+```python
+class UpdateUserViewModel(CustomBaseModel):
+    username: str
+    email: str | None = None
+    roles: list[str]
+    isActive: bool
+    password: str | None = None
+
+    @staticmethod
+    def get_default(
+        username: str | None = None,
+        email: str | None = None,
+        roles: list | None = None,
+        is_active: bool = True,
+        password: str | None = None,
+    ) -> "UpdateUserViewModel":
+        return UpdateUserViewModel(
+            username=helper_random.random_string if username is None else username,
+            email=f"{helper_random.random_string}@example.com" if email is None else email,
+            roles=[] if roles is None else roles,
+            isActive=is_active,
+            password=helper_random.random_string if password is None else password,
+        )
+```
+
+Имеем простенькую модель `UpdateUserViewModel`, которая позволяет обновить информацию о пользователе.
+
+Посмотрим на готовый метод:
+
+```python
+def update_user_request(self, id: str, payload: UpdateUserViewModel) -> HttpRequest:
+    return (
+        self.request("PUT", f"/api/v1/users/{id}")
+        .set_body_as_model(payload)
+        .set_summary("Обновляет информацию о пользователе")
+    )
+```
+
+Метод отправляет на API `PUT`-запрос для обновления данных пользователей.
+
+### Пишем авто-тест
+
+```python
+#@allure.id("100001")
+#@allure.title("PUT /api/v1/users/{id} 200 - обновление информации о пользователе")
+def test_update_user(self, user_service, existing_user):
+    payload = UpdateUserViewModel.get_default()
+    response = user_service.update_user_request(
+        id=existing_user.id, payload=payload
+    ).send()
+    assert_that(response.status_code).is_equal_to(204)
+```
+
+#### Разбор теста:
+
+1. **Нейминг**: название теста строится по принципу `test_` + `название метода`.
+2. **Параметры теста:**
+   - `self` — стандартный параметр.
+   - `user_service` — fixture в `pytest`, отвечающая за отправку HTTP-запросов.
+   - `existing_user` — fixture, создающая тестового пользователя в системе.
+3. **Создание объекта `payload`** с данными по умолчанию.
+4. **Формирование запроса**:
+   ```python
+   response = user_service.update_user_request(
+        id=existing_user.id, payload=payload
+    ).send()
+   ```
+   - `update_user_request()` формирует `PUT`-запрос.
+   - `.send()` отправляет его и получает ответ.
+5. **Проверка ответа:**
+   ```python
+   assert_that(response.status_code).is_equal_to(204)
+   ```
+   Используем `assertpy` для удобства валидации.
+
+Таким образом, мы написали простой API-тест. В следующих статьях разберем используемые библиотеки и другие аспекты тестирования.
+
+
