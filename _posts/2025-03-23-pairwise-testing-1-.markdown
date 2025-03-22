@@ -1,5 +1,5 @@
 ---
-title: "200-тесты для готовых API"
+title: "Тест-дизайн. Попарное тестирование."
 layout: post
 date: 2025-03-23
 categories: [Manual, Testing, Designs]
